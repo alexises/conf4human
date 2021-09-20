@@ -43,6 +43,8 @@ class LocalizableLiteral(LocalizableObject):
     def __ne__(self, other):
         return not(self == other)
 
+    def serialize(self):
+        return self.getValue()
 
 class LocalizableCollection(LocalizableObject):
     def __init__(self, begin: FilePosition):
@@ -66,7 +68,10 @@ class LocalizableCollection(LocalizableObject):
         raise NotImplemented("This class is abstract")
 
     def getLast(self) -> LocalizableObject:
-        raise NotImplemented("This class is abstract"é)
+        raise NotImplemented("This class is abstract")
+
+    def serialize(self) -> LocalizableObject:
+        raise NotImplemented("This class is abstract")
 
 class LocalizableList(LocalizableCollection):
     def __init__(self, begin):
@@ -91,6 +96,12 @@ class LocalizableList(LocalizableCollection):
     def __item__(self, idx: int):
         return self._list[idx]
 
+    def serialize(self):
+        out = []
+        for i in self._list:
+            out.append(i.serialize())
+        return out
+
 class LocalizableOrderedDict(LocalizableCollection):
     def __init__(self, begin):
         super().__init__(begin)
@@ -114,3 +125,10 @@ class LocalizableOrderedDict(LocalizableCollection):
     def __item__(self, idx):
         return self._dict[idx]
    
+    def serialize(self):
+        out = {}
+        for key, val in self._dict:
+            serialized_key = key.serialize()
+            serialized_val = val.serialize()
+            out[serialized_key] = serialized_val
+        return out

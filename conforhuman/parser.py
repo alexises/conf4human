@@ -1,123 +1,148 @@
-from ast import LocalizableLiteral, FilePosition
+import ply.yacc as yacc
+from lexer import tokens, YamlLexer
+from ast import  LocalizableOrderedDict, LocalizableList
 
-class YamlLexer(object):
-    tokens = (
-        'COLOM',
-        'OPEN_BRACE',
-        'CLOSE_BRACE',
-        'OPEN_BRACKET',
-        'CLOSE_BRACKET',
-        'SPACE',
-        'INT',
-        'FLOAT',
-        'NULL',
-        'BOOL',
-        'SIMPLE_STRING',
-        'DOUBLE_STRING',
-        'NON_QUOTED_STRING'
-   )
+class YamlParser():
+    def __init__(self):
+        self.lexer = YamlLexer()
+        self.lexer.build()
+        self.tokens = tokens
+        self.yacc = yacc.yacc(module=self,debug=True)
 
-   def __init__(self):
-       self.lineno = 0
-       self.column = 0
+    def p_document(p):
+        '''document : collection
+                    | literal'''
+        p[0] = p[1]
 
-   def getPos(self):
-       return FilePosition(self.lineno, self.column)
+    def p_literal(p):
+        '''literal : INT
+                   | FLOAT
+                   | BOOL
+                   | string'''
+        p[0] = p[1]
 
-   def build(self, **kwargs):
-       self.lexer = lex.lex(module=self, **kwargs)
+    def p_string(p):
+        '''string : SIMPLE_STRING
+                  | DOUBLE_STRING
+                  | NON_QUOTED_STRING'''
+        p[0] = p[1]
 
-   def t_newline(t):
-       r'\n+'
-       t.lexer.lineno += len(t.value)
-       self.column = 0
+    def p_collection(p):
+        '''collection : inline_collection
+                      | structured_collection '''
+        p[0] = p[1]
 
-   def t_COLOM(self, t):
-       r':'
-       self.column++
+    def p_inline_collection(p):
+        '''inline_collection : inline_dict
+                             | inline_list'''
+        p[0] = p[1]
 
-   def t_OPEN_BRACE(self, t):
-       r'\{'
-       self.column++
+    def p_inline_dict(p):
+        '''inline_dict : OPEN_BRACKET inline_dict_items CLOSE_BRACKET'''
+        p[0] = p[2]
 
-   def t_CLOSE_BRACE(self, t):
-       r'\}'
-       self.column++
+    def p_inline_dict_items(p):
+        '''inline_dict_item : dict_element
+                            | inline_dict_item COMMA dict_element
+                            | empty'''
+        if len(p) == 1:
+           p[0] = LocalizableOrderedDict()
+        elif len(p) == 2:
+           p[0] = LocalizableOrderedDict()
+           (key, val) = p[1]
+           p[0].add(key, val)
+        else:
+           p[0] = P[1]
+           (key, val) = p[3]
+           p[0].add(key, val)
 
-   def t_OPEN_BRACKET(self, t):
-       r'\['
-       self.column++
+    def p_inline_dict_item(p):
+        ''' inline_dict_item : string COLOM inline_literal '''
+        p[0] = (p[1], p[3])
 
-   def t_CLOSE_BRACKET(self, t):
-       r'\]'
-       self.column++
+    def p_inline_literal(p):
+        ''' inline_literal : literal
+                           | inline_collection '''
+        p[0] = p[1]
 
-   def t_SPACE(self, t):
-       r'[ ]+'
-       self.column+=len(t.value)
+    def p_inline_list(p):
+        ''' inline_list : OPEN_BRACKET inline_list_items CLOSE_BRACKED'''
+        p[0] = p[2}
 
-   def t_INT(self, t):
-       r'[0-9]+'
-       begin = self.getPos()
-       self.column+=len(t.value)
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, int(t.value))
-       
+    def p_inline_list_items(p):
+        ''' inline_list_items: inline_literal
+                             | inline_list_items COMA inline_literal
+                             | empty'''
+        if len(p) == 1:
+           p[0] = LocalizableList()
+        elif len(p) == 2:
+           p[0] = LocalizableList()
+           p[0].add(p[1])
+        else:
+           p[0] = P[1]
+           (key, val) = p[3]
+           p[0].add(key, val)
 
-   def t_FLOAT(self, t):
-       r'[0-9]+\.[0-9]+'
-       begin = self.getPos()
-       self.column+=len(t.value)
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, float(t.value))
+    def p_structured_collection(p):
+        '''structured_collection: BEGIN_BLOCK structured_collection_items END_BLOCK'''
+        p[0] = p[2]
 
-   def t_BOOL(self, t):
-       r'(true|false)'
-       begin = self.getPos()
-       if t.value == 'true':
-          t.value = True
-       else:
-          t.value = False
-       self.column+=len(t.value)
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, t.value)
+    def p_structured_collection_items(p):
+        '''structured_collection_items: structured_list
+                                      | structured_dict '''
+        p[0] = p[1]
 
-   def t_NULL(self, t):
-       r'null'
-       begin = self.getPos()
-       self.column+=len(t.value)
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, None)
+    def p_structured_list(p):
+        '''structured_list : structured_list_item
+                           | structured_list structured_list_item
+                           | empty'''
+        if len(p) == 1:
+           p[0] = LocalizableList()
+        elif len(p) == 2:
+           p[0] = LocalizableList()
+           p[0].add(p[1])
+        else:
+           p[0] = P[1]
+           (key, val) = p[3]
+           p[0].add(key, val)
 
+    def p_structured_list_item(p):
+        ''' structured_list_item: MINUS document '''
+        p[0] = p[2]
 
+    def p_structured_dict(p):
+        ''' structured_dict: structured_dict_item
+                            | structured_dict structured_dict_item
+                            | empty'''
+        if len(p) == 1:
+           p[0] = LocalizableOrderedDict()
+        elif len(p) == 2:
+           p[0] = LocalizableOrderedDict()
+           (key, val) = p[1]
+           p[0].add(key, val)
+        else:
+           p[0] = P[1]
+           (key, val) = p[3]
+           p[0].add(key, val)
 
-   def decode_string(self, t):
-       begin = self.getPos()
-       data = t.value[1:-2].decode('string_escape')
-       self.column+=len(t.value)
-       self.line+=data.count('\n')
-       last_return = t.value.rfind(r'\n')
-       if t.value.rfind(r'\n') >= 0:
-           self.column = len(t.value - t.value.rfind(r'\n') - 2
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, data)
+    def p_structured_dict_item(p):
+        ''' structrured_dict_item: string COLOM inline_literal'''
+        p[0] = (p[1], p[3])
 
-   def t_SIMPLE_STRING(self, t):
-       r"'([^']|\')*'"
-       self.decode_string(t)
-   
-   def t_DOUBLE_STRING(self, t):
-       r'"([^"]|\")"'
-       self.decode_string(t)
+    def parse_string(self, s):
+         
 
-   def t_NON_QUOTED_STRING
-       r"[^ :\"'][^:\"']*"
-       begin = self.getPos()
-       data = t.decode('string_escape')
-       self.column+=len(t.value)
-       self.line+=data.count('\n')
-       last_return = t.value.rfind(r'\n')
-       if t.value.rfind(r'\n') >= 0:
-           self.column = len(t.value - t.value.rfind(r'\n') - 2
-       end = self.getPos()
-       t.value = LocalizableLiteral(begin, end, data)
+    def parse(self, s):
+        return self.yacc.parse(s)
+
+    def parse_stdin(self):
+        while 1:
+            try:
+                s = input('parse> ')
+            except EOFError:
+                break
+            if not s:
+                continue
+            r = self.yacc.parse(s)
+            r.pretty_print()
+
