@@ -2,7 +2,7 @@ import ply.yacc as yacc
 from lexer import tokens, YamlLexer
 from ast import  LocalizableOrderedDict, LocalizableList
 
-class YamlParser():
+class YamlParser(object):
     def __init__(self):
         self.lexer = YamlLexer()
         self.lexer.build()
