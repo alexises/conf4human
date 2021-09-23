@@ -1,4 +1,4 @@
-from ast import LocalizableLiteral, FilePosition
+from .ast import LocalizableLiteral, FilePosition
 import ply.lex as lex
 
 tokens = (
@@ -130,7 +130,7 @@ class YamlLexer(object):
        self.line+=data.count('\n')
        last_return = t.value.rfind(r'\n')
        if t.value.rfind(r'\n') >= 0:
-           self.column = len(t.value - t.value.rfind(r'\n') - 2
+           self.column = len(t.value) - t.value.rfind(r'\n') - 2
        end = self.getPos()
        t.value = LocalizableLiteral(begin, end, data)
        return t
@@ -143,7 +143,7 @@ class YamlLexer(object):
        r'"([^"]|\")"'
        return self.decode_string(t)
 
-   def t_NON_QUOTED_STRING
+   def t_NON_QUOTED_STRING(self, t):
        r"[^ :\"'][^:\"']*"
        begin = self.getPos()
        data = t.decode('string_escape')
@@ -151,7 +151,7 @@ class YamlLexer(object):
        self.line+=data.count('\n')
        last_return = t.value.rfind(r'\n')
        if t.value.rfind(r'\n') >= 0:
-           self.column = len(t.value - t.value.rfind(r'\n') - 2
+           self.column = len(t.value) - t.value.rfind(r'\n') - 2
        end = self.getPos()
        t.value = LocalizableLiteral(begin, end, data)
        return t

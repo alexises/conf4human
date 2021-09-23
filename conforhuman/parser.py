@@ -1,6 +1,6 @@
 import ply.yacc as yacc
-from lexer import tokens, YamlLexer
-from ast import  LocalizableOrderedDict, LocalizableList
+from .lexer import tokens, YamlLexer
+from .ast import  LocalizableOrderedDict, LocalizableList
 
 class YamlParser(object):
     def __init__(self):
@@ -67,7 +67,7 @@ class YamlParser(object):
 
     def p_inline_list(p):
         ''' inline_list : OPEN_BRACKET inline_list_items CLOSE_BRACKED'''
-        p[0] = p[2}
+        p[0] = p[2]
 
     def p_inline_list_items(p):
         ''' inline_list_items: inline_literal
@@ -130,7 +130,7 @@ class YamlParser(object):
         p[0] = (p[1], p[3])
 
     def parse_string(self, s):
-         
+        return self.yacc.parse(s)
 
     def parse(self, s):
         return self.yacc.parse(s)

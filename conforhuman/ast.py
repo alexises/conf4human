@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 class FilePosition(object):
-    def __init__(self, line: int, column: int, filename=None: str):
+    def __init__(self, line: int, column: int, filename: str = None):
         self.line = line
         self.column = column
         self.filename = filename
@@ -10,14 +10,14 @@ class FilePosition(object):
         if filename is None:
            return '{}:{}'.format(self.line, self.column)
         else:
-           return '{}({}:{})'.format(self.filename, self.line, self.column
+           return '{}({}:{})'.format(self.filename, self.line, self.column)
 
 class LocalizableObject(object):
-   def getStartPosition(self) -> FilePosition:
-       raise NotImplemented("This class is an interface")
+    def getStartPosition(self) -> FilePosition:
+        raise NotImplemented("This class is an interface")
 
-   def getEndPosition(self) -> FilePosition:
-       raise NotImplemented("This class is an interface")
+    def getEndPosition(self) -> FilePosition:
+        raise NotImplemented("This class is an interface")
 
 class LocalizableLiteral(LocalizableObject):
     def __init__(self, begin: FilePosition, end: FilePosition, value):
@@ -80,13 +80,13 @@ class LocalizableList(LocalizableCollection):
 
     def getFirst(self) -> LocalizableObject:
         try:
-            return self._list[0]:
+            return self._list[0]
         except IndexError:
             return None
 
     def getLast() -> LocalizableObject:
         try:
-            return self._list[-1]:
+            return self._list[-1]
         except IndexError:
             return None
 
@@ -108,14 +108,14 @@ class LocalizableOrderedDict(LocalizableCollection):
         self._dict = OrderedDict()
 
     def getFirst(self) -> LocalizableObject:
-        try
-            return next(iter(self._dict.items()):
+        try:
+            return next(iter(self._dict.items()))
         except IndexError:
             return None
 
     def getLast() -> LocalizableObject:
         try:
-            return next(reversed(self._list)):
+            return next(reversed(self._list))
         except IndexError:
             return None
 
