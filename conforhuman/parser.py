@@ -19,6 +19,7 @@ class YamlParser(object):
         '''literal : INT
                    | FLOAT
                    | BOOL
+                   | NULL
                    | string'''
         p[0] = p[1]
 
@@ -39,13 +40,13 @@ class YamlParser(object):
         p[0] = p[1]
 
     def p_inline_dict(self, p):
-        '''inline_dict : OPEN_BRACKET inline_dict_items CLOSE_BRACKET'''
+        '''inline_dict : OPEN_BRACE inline_dict_items CLOSE_BRACE'''
         p[0] = p[2]
 
     def p_inline_dict_items(self, p):
-        '''inline_dict_item : dict_element
-                            | inline_dict_item COMMA dict_element
-                            | empty'''
+        '''inline_dict_items : inline_dict_element
+                             | inline_dict_items COMMA inline_dict_element
+                             | empty'''
         if len(p) == 1:
            p[0] = LocalizableOrderedDict()
         elif len(p) == 2:
@@ -57,8 +58,8 @@ class YamlParser(object):
            (key, val) = p[3]
            p[0].add(key, val)
 
-    def p_inline_dict_item(self, p):
-        ''' inline_dict_item : string COLOM inline_literal '''
+    def p_inline_dict_element(self, p):
+        ''' inline_dict_element : string COLOM inline_literal '''
         p[0] = (p[1], p[3])
 
     def p_inline_literal(self, p):
@@ -67,13 +68,13 @@ class YamlParser(object):
         p[0] = p[1]
 
     def p_inline_list(self, p):
-        ''' inline_list : OPEN_BRACKET inline_list_items CLOSE_BRACKED'''
+        ''' inline_list : OPEN_BRACKET inline_list_items CLOSE_BRACKET'''
         p[0] = p[2]
 
     def p_inline_list_items(self, p):
-        ''' inline_list_items: inline_literal
-                             | inline_list_items COMA inline_literal
-                             | empty'''
+        ''' inline_list_items : inline_literal
+                              | inline_list_items COMMA inline_literal
+                              | empty'''
         if len(p) == 1:
            p[0] = LocalizableList()
         elif len(p) == 2:
@@ -85,18 +86,17 @@ class YamlParser(object):
            p[0].add(key, val)
 
     def p_structured_collection(self, p):
-        '''structured_collection: BEGIN_BLOCK structured_collection_items END_BLOCK'''
+        '''structured_collection : BEGIN_BLOCK structured_collection_items END_BLOCK'''
         p[0] = p[2]
 
     def p_structured_collection_items(self, p):
-        '''structured_collection_items: structured_list
-                                      | structured_dict '''
+        '''structured_collection_items : structured_list
+                                       | structured_dict '''
         p[0] = p[1]
 
     def p_structured_list(self, p):
         '''structured_list : structured_list_item
-                           | structured_list structured_list_item
-                           | empty'''
+                           | structured_list structured_list_item'''
         if len(p) == 1:
            p[0] = LocalizableList()
         elif len(p) == 2:
@@ -108,13 +108,12 @@ class YamlParser(object):
            p[0].add(key, val)
 
     def p_structured_list_item(self, p):
-        ''' structured_list_item: MINUS document '''
+        ''' structured_list_item : MINUS document '''
         p[0] = p[2]
 
     def p_structured_dict(self, p):
-        ''' structured_dict: structured_dict_item
-                            | structured_dict structured_dict_item
-                            | empty'''
+        ''' structured_dict : structured_dict_item
+                            | structured_dict structured_dict_item'''
         if len(p) == 1:
            p[0] = LocalizableOrderedDict()
         elif len(p) == 2:
@@ -127,8 +126,12 @@ class YamlParser(object):
            p[0].add(key, val)
 
     def p_structured_dict_item(self, p):
-        ''' structrured_dict_item: string COLOM inline_literal'''
+        ''' structured_dict_item : string COLOM inline_literal'''
         p[0] = (p[1], p[3])
+
+    def p_empty(self, p):
+        ''' empty : '''
+        p[0] = None
 
     def parse_string(self, s):
         return self.yacc.parse(s)

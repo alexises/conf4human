@@ -1,5 +1,9 @@
 from .ast import LocalizableLiteral, FilePosition
 import ply.lex as lex
+import codecs
+import logging
+
+logger = logging.getLogger(__name__)
 
 class YamlLexer(object):
     tokens = (
@@ -31,9 +35,9 @@ class YamlLexer(object):
     def getPos(self):
         return FilePosition(self.lineno, self.column)
 
-    def getLiteral(self, t, callack=None):
+    def getLiteral(self, t, callback=None):
         begin = self.getPos()
-        t.column += len(t.value)
+        self.column += len(t.value)
         end = self.getPos()
         if callback is not None:
             t.value = callback(t.value)
@@ -69,39 +73,40 @@ class YamlLexer(object):
 
     def t_COLOM(self, t):
         r':'
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_OPEN_BRACE(self, t):
         r'\{'
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_CLOSE_BRACE(self, t):
         r'\}'
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_OPEN_BRACKET(self, t):
         r'\['
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_CLOSE_BRACKET(self, t):
         r'\]'
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_COMMA(self, t):
         r','
-        return self.getLiteral(f)
-   
-    def t_MINUS(self, t):
-        r'-'
-        return self.getLiteral(f)
+        return self.getLiteral(t)
 
     def t_INT(self, t):
-        r'[0-9]+'
-        return self.getLiteral(f, int)
+        r'-?[0-9]+'
+        return self.getLiteral(t, int)
 
     def t_FLOAT(self, t):
-        r'[0-9]+\.[0-9]+'
-        return self.getLiteral(f, float)
+        r'-?[0-9]+\.[0-9]+'
+        logger.debug('float')
+        return self.getLiteral(t, float)
+
+    def t_MINUS(self, t):
+        r'-'
+        return self.getLiteral(t)
 
     def t_BOOL(self, t):
         r'(true|false)'
@@ -125,9 +130,9 @@ class YamlLexer(object):
 
     def decode_string(self, t):
         begin = self.getPos()
-        data = t.value[1:-2].decode('string_escape')
-        self.column+=len(t.value)
-        self.line+=data.count('\n')
+        data = codecs.escape_decode(str(t.value[1:-1]))[0].decode('utf8')
+        self.column += len(t.value)
+        self.lineno += data.count('\n')
         last_return = t.value.rfind(r'\n')
         if t.value.rfind(r'\n') >= 0:
             self.column = len(t.value) - t.value.rfind(r'\n') - 2
@@ -140,15 +145,16 @@ class YamlLexer(object):
         return self.decode_string(t)
    
     def t_DOUBLE_STRING(self, t):
-        r'"([^"]|\")"'
+        r'"([^"]|\")*"'
         return self.decode_string(t)
 
     def t_NON_QUOTED_STRING(self, t):
-        r"[^ :\"'][^:\"']*"
+        r"[^ :\"'0-9-][^:\"']*"
+        logger.debug('fuck you')
         begin = self.getPos()
-        data = t.decode('string_escape')
-        self.column+=len(t.value)
-        self.line+=data.count('\n')
+        data = codecs.escape_decode(str(t.value))[0].decode('utf8')
+        self.column += len(t.value)
+        self.lineno += data.count("\n")
         last_return = t.value.rfind(r'\n')
         if t.value.rfind(r'\n') >= 0:
             self.column = len(t.value) - t.value.rfind(r'\n') - 2
