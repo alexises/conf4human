@@ -95,14 +95,14 @@ class YamlLexer(object):
         r','
         return self.getLiteral(t)
 
-    def t_INT(self, t):
-        r'-?[0-9]+'
-        return self.getLiteral(t, int)
-
     def t_FLOAT(self, t):
         r'-?[0-9]+\.[0-9]+'
         logger.debug('float')
         return self.getLiteral(t, float)
+
+    def t_INT(self, t):
+        r'-?[0-9]+'
+        return self.getLiteral(t, int)
 
     def t_MINUS(self, t):
         r'-'
@@ -111,11 +111,11 @@ class YamlLexer(object):
     def t_BOOL(self, t):
         r'(true|false)'
         begin = self.getPos()
+        self.column+=len(t.value)
         if t.value == 'true':
             t.value = True
         else:
             t.value = False
-        self.column+=len(t.value)
         end = self.getPos()
         t.value = LocalizableLiteral(begin, end, t.value)
         return t
@@ -150,7 +150,6 @@ class YamlLexer(object):
 
     def t_NON_QUOTED_STRING(self, t):
         r"[^ :\"'0-9-][^:\"']*"
-        logger.debug('fuck you')
         begin = self.getPos()
         data = codecs.escape_decode(str(t.value))[0].decode('utf8')
         self.column += len(t.value)
