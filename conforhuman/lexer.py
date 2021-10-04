@@ -69,7 +69,7 @@ class YamlLexer(object):
 
     def t_space(self, t):
         r'[ ]+'
-        t.column += len(t.value)
+        self.column += len(t.value)
 
     def t_COLOM(self, t):
         r':'

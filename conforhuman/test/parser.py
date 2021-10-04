@@ -8,6 +8,7 @@ class TestYaml(unittest.TestCase):
     def _compareString(self, string_data, result_obj):
         parser = YamlParser()
         out = parser.parse_string(string_data)
+        logger.debug('%s', out)
         out_obj = out.serialize()
         logger.debug('%s == %s', out_obj, result_obj)
         self.assertTrue(out_obj == result_obj)
@@ -24,6 +25,12 @@ class TestYaml(unittest.TestCase):
         self._compareString("false", False)
         self._compareString("null", None)
         self._compareString(r'"\0"', "\0")
+
+    def test_array(self):
+        self._compareString(r'[]', [])
+        self._compareString(r'["foo"]', ["foo"])
+        self._compareString(r'[32]', [32])
+        self._compareString(r'[32, "bar"]', [32, "bar"])
 
 
 if __name__ == '__main__':

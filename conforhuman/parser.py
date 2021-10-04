@@ -1,6 +1,9 @@
 import ply.yacc as yacc
 from .lexer import YamlLexer
 from .ast import  LocalizableOrderedDict, LocalizableList
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class YamlParser(object):
@@ -10,10 +13,15 @@ class YamlParser(object):
         self.tokens = self.lexer.tokens
         self.yacc = yacc.yacc(module=self,debug=True)
 
+    start = "document"
+    def p_error(self, p):
+        logger.debug('oups, something append')
+
     def p_document(self, p):
         '''document : collection
                     | literal'''
         p[0] = p[1]
+        logger.debug(p[0])
 
     def p_literal(self, p):
         '''literal : INT
@@ -75,15 +83,13 @@ class YamlParser(object):
         ''' inline_list_items : inline_literal
                               | inline_list_items COMMA inline_literal
                               | empty'''
-        if len(p) == 1:
-           p[0] = LocalizableList()
-        elif len(p) == 2:
-           p[0] = LocalizableList()
-           p[0].add(p[1])
+        if len(p) == 2:
+           p[0] = LocalizableList(p[-1].getEndPosition())
+           if p[1] is not None:
+               p[0].add(p[1])
         else:
-           p[0] = P[1]
-           (key, val) = p[3]
-           p[0].add(key, val)
+           p[0] = p[1]
+           p[0].add(p[3])
 
     def p_structured_collection(self, p):
         '''structured_collection : BEGIN_BLOCK structured_collection_items END_BLOCK'''
@@ -97,13 +103,11 @@ class YamlParser(object):
     def p_structured_list(self, p):
         '''structured_list : structured_list_item
                            | structured_list structured_list_item'''
-        if len(p) == 1:
-           p[0] = LocalizableList()
-        elif len(p) == 2:
-           p[0] = LocalizableList()
+        if len(p) == 2:
+           p[0] = LocalizableList(p[-1].getEndPosition())
            p[0].add(p[1])
         else:
-           p[0] = P[1]
+           p[0] = p[1]
            (key, val) = p[3]
            p[0].add(key, val)
 
