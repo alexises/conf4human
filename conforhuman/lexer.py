@@ -149,7 +149,7 @@ class YamlLexer(object):
         return self.decode_string(t)
 
     def t_NON_QUOTED_STRING(self, t):
-        r"[^ :\"'0-9{}\[\]-][^:\"'{}\[\]]*"
+        r"[^ :\"'0-9{}\[\]\n-][^:\"'{}\[\]\n]*"
         begin = self.getPos()
         data = codecs.escape_decode(str(t.value))[0].decode('utf8')
         self.column += len(t.value)

@@ -18,7 +18,8 @@ class YamlParser(object):
         pass 
 
     def p_document(self, p):
-        '''document : collection
+        '''document : structured_collection_items
+                    | collection
                     | literal'''
         p[0] = p[1]
         logger.debug(p[0])
@@ -103,12 +104,11 @@ class YamlParser(object):
         '''structured_list : structured_list_item
                            | structured_list structured_list_item'''
         if len(p) == 2:
-           p[0] = LocalizableList(p[-1].getEndPosition())
+           p[0] = LocalizableList(p[1].getStartPosition())
            p[0].add(p[1])
         else:
            p[0] = p[1]
-           (key, val) = p[3]
-           p[0].add(key, val)
+           p[0].add(p[2])
 
     def p_structured_list_item(self, p):
         ''' structured_list_item : MINUS document '''
@@ -118,13 +118,9 @@ class YamlParser(object):
         ''' structured_dict : structured_dict_item
                             | structured_dict structured_dict_item'''
         if len(p) == 1:
-           p[0] = LocalizableOrderedDict()
-        elif len(p) == 2:
-           p[0] = LocalizableOrderedDict()
-           (key, val) = p[1]
-           p[0].add(key, val)
+           p[0] = LocalizableOrderedDict(p[1].getStartPosition())
         else:
-           p[0] = P[1]
+           p[0] = p[1]
            (key, val) = p[3]
            p[0].add(key, val)
 
@@ -137,7 +133,7 @@ class YamlParser(object):
         p[0] = None
 
     def parse_string(self, s):
-        return self.yacc.parse(s, debug=True)
+        return self.yacc.parse(s)
 
     def parse(self, s):
         return self.yacc.parse(s)
