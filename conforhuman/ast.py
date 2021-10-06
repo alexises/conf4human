@@ -127,7 +127,7 @@ class LocalizableOrderedDict(LocalizableCollection):
    
     def serialize(self):
         out = {}
-        for key, val in self._dict:
+        for key, val in self._dict.items():
             serialized_key = key.serialize()
             serialized_val = val.serialize()
             out[serialized_key] = serialized_val

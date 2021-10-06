@@ -15,7 +15,7 @@ class YamlParser(object):
 
     start = "document"
     def p_error(self, p):
-        logger.debug('oups, something append')
+        pass 
 
     def p_document(self, p):
         '''document : collection
@@ -55,14 +55,13 @@ class YamlParser(object):
         '''inline_dict_items : inline_dict_element
                              | inline_dict_items COMMA inline_dict_element
                              | empty'''
-        if len(p) == 1:
-           p[0] = LocalizableOrderedDict()
-        elif len(p) == 2:
-           p[0] = LocalizableOrderedDict()
-           (key, val) = p[1]
-           p[0].add(key, val)
+        if len(p) == 2:
+           p[0] = LocalizableOrderedDict(p[-1].getEndPosition())
+           if p[1] is not None:
+               (key, val) = p[1]
+               p[0].add(key, val)
         else:
-           p[0] = P[1]
+           p[0] = p[1]
            (key, val) = p[3]
            p[0].add(key, val)
 
@@ -138,7 +137,7 @@ class YamlParser(object):
         p[0] = None
 
     def parse_string(self, s):
-        return self.yacc.parse(s)
+        return self.yacc.parse(s, debug=True)
 
     def parse(self, s):
         return self.yacc.parse(s)

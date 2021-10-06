@@ -141,15 +141,15 @@ class YamlLexer(object):
         return t
 
     def t_SIMPLE_STRING(self, t):
-        r"'([^']|\')*'"
+        r"'([^']|\\')*'"
         return self.decode_string(t)
    
     def t_DOUBLE_STRING(self, t):
-        r'"([^"]|\")*"'
+        r'"([^"]|\\")*"'
         return self.decode_string(t)
 
     def t_NON_QUOTED_STRING(self, t):
-        r"[^ :\"'0-9-][^:\"']*"
+        r"[^ :\"'0-9{}\[\]-][^:\"'{}\[\]]*"
         begin = self.getPos()
         data = codecs.escape_decode(str(t.value))[0].decode('utf8')
         self.column += len(t.value)
