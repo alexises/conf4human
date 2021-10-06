@@ -46,5 +46,13 @@ class TestYaml(unittest.TestCase):
         self._compareString(a, ["foo"])
         self._compareString(b, ["foo", "bar"])
 
+    def test_inlined_dict(self):
+        a = 'foo: "bar"'
+        b = """
+        foo: bar
+        bar: 42"""
+        self._compareString(a, {"foo": "bar"})
+        self._compareString(b, {"foo": "bar", "bar": 42})
+
 if __name__ == '__main__':
     unittest.main()

@@ -117,11 +117,13 @@ class YamlParser(object):
     def p_structured_dict(self, p):
         ''' structured_dict : structured_dict_item
                             | structured_dict structured_dict_item'''
-        if len(p) == 1:
-           p[0] = LocalizableOrderedDict(p[1].getStartPosition())
+        if len(p) == 2:
+           (key, val) = p[1]
+           p[0] = LocalizableOrderedDict(key.getStartPosition())
+           p[0].add(key, val)
         else:
            p[0] = p[1]
-           (key, val) = p[3]
+           (key, val) = p[2]
            p[0].add(key, val)
 
     def p_structured_dict_item(self, p):
