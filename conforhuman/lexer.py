@@ -5,6 +5,28 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class IdentLexer(lex.Lexer):
+    def __init__(self, lexer):
+        super().__init__()
+        self.lexer = lexer
+        self.context = None
+
+    def __getattr__(self, name):
+        return getattr(self.lexer, name)
+
+    def token(self):
+        while True:
+            if self.context is None:
+                self.context = self.lexer.token()
+
+            try:
+                return next(token)
+            except TypeError:
+                (token, self.context) = (self.context, None)
+                return token
+            except StopIteration:
+                self.context = None
+            
 class YamlLexer(object):
     tokens = (
         'COLOM',
@@ -45,22 +67,25 @@ class YamlLexer(object):
         return t
 
     def build(self, **kwargs):
-        self.lexer = lex.lex(module=self, **kwargs)
+        self.lexer = IdentLexer(lex.lex(module=self, **kwargs))
 
     def t_middle_space(self, t):
-        'r^[ ]+'
+        r'(?m)^[ ]+'
+        logger.debug('middle space')
         indent_size = len(t.value)
-        self.column += current_size
+        self.column += indent_size
         if indent_size > self.block[-1]:
-            self.block.append(current_size)
+            self.block.append(indent_size)
             t.type = 'BEGIN_BLOCK'
             return t
         elif indent_size == self.block:
             return None
         elif indent_size != self.block[-2]:
-            raise Exception('bad section indentation')
-       
+            logger.debug("stack size : %s", self.block)
+            logger.debug("ident size : %s at %s:%s", indent_size, self.lineno, self.column)
+            raise Exception('bad section indentation') 
         self.block.pop()
+        return None
 
     def t_newline(self, t):
         r'\n+'
@@ -160,3 +185,10 @@ class YamlLexer(object):
         end = self.getPos()
         t.value = LocalizableLiteral(begin, end, data)
         return t
+
+    def t_eof(self, t):
+        r'$'
+        while len(self.block) > 0:
+            self.block.pop()
+            t.type = 'END_BLOCK'
+            yield t

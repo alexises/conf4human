@@ -11,7 +11,7 @@ class YamlParser(object):
         self.lexer = YamlLexer()
         self.lexer.build()
         self.tokens = self.lexer.tokens
-        self.yacc = yacc.yacc(module=self,debug=True)
+        self.yacc = yacc.yacc(module=self, debug=True)
 
     start = "document"
     def p_error(self, p):
