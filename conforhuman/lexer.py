@@ -15,17 +15,32 @@ class IdentLexer(lex.Lexer):
         return getattr(self.lexer, name)
 
     def token(self):
-        while True:
-            if self.context is None:
-                self.context = self.lexer.token()
-
-            try:
-                return next(token)
-            except TypeError:
-                (token, self.context) = (self.context, None)
-                return token
-            except StopIteration:
-                self.context = None
+        logger.debug('start func')
+        data = self.lexer.token()
+        logger.debug('%s', data)
+#        while True:
+#            if self.context is None:
+#                logger.debug('begin iteration')
+#                self.context = self.lexer.token()
+#                logger.debug('test context %s', self.context)
+#
+#            if self.context is None:
+#                logger.debug('none')
+#                return None
+#
+#            try:
+#                logger.debug('here')
+#                token = next(self.context)
+#                logger.debug('test token %s', token)
+#                return token
+#            except TypeError:
+#                logger.debug('type error')
+#                (token, self.context) = (self.context, None)
+#                logger.debug('type : %s', type(token))
+#                return token
+#            except StopIteration:
+#                logger.debug('end iteration')
+#                self.context = None
             
 class YamlLexer(object):
     tokens = (
@@ -68,6 +83,11 @@ class YamlLexer(object):
 
     def build(self, **kwargs):
         self.lexer = IdentLexer(lex.lex(module=self, **kwargs))
+        return self.lexer
+
+    def t_blank_line(self, t):
+        r'(?m)^[ ]+$'
+        return None
 
     def t_middle_space(self, t):
         r'(?m)^[ ]+'
@@ -78,7 +98,7 @@ class YamlLexer(object):
             self.block.append(indent_size)
             t.type = 'BEGIN_BLOCK'
             return t
-        elif indent_size == self.block:
+        elif indent_size == self.block[-1]:
             return None
         elif indent_size != self.block[-2]:
             logger.debug("stack size : %s", self.block)
@@ -186,9 +206,10 @@ class YamlLexer(object):
         t.value = LocalizableLiteral(begin, end, data)
         return t
 
-    def t_eof(self, t):
-        r'$'
-        while len(self.block) > 0:
-            self.block.pop()
-            t.type = 'END_BLOCK'
-            yield t
+#    def t_eof(self, t):
+#        r'$'
+#        while len(self.block) > 0:
+#            self.block.pop()
+#            t.type = 'END_BLOCK'
+#            return t
+#            yield t

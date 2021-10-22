@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class YamlParser(object):
     def __init__(self):
         self.lexer = YamlLexer()
-        self.lexer.build()
+        self.lexerObj = self.lexer.build()
         self.tokens = self.lexer.tokens
         self.yacc = yacc.yacc(module=self, debug=True)
 
@@ -135,7 +135,8 @@ class YamlParser(object):
         p[0] = None
 
     def parse_string(self, s):
-        return self.yacc.parse(s)
+        logger.debug(s)
+        return self.yacc.parse(s, lexer=self.lexerObj)
 
     def parse(self, s):
         return self.yacc.parse(s)
