@@ -22,7 +22,7 @@ class YamlParser(object):
                     | collection
                     | literal'''
         p[0] = p[1]
-        logger.debug(p[0])
+        logger.debug(f"final obj {p[0]}")
 
     def p_literal(self, p):
         '''literal : INT
@@ -127,7 +127,8 @@ class YamlParser(object):
            p[0].add(key, val)
 
     def p_structured_dict_item(self, p):
-        ''' structured_dict_item : string COLOM inline_literal'''
+        ''' structured_dict_item : string COLOM inline_literal
+                                 | string COLOM structured_collection'''
         p[0] = (p[1], p[3])
 
     def p_empty(self, p):
@@ -135,8 +136,8 @@ class YamlParser(object):
         p[0] = None
 
     def parse_string(self, s):
-        logger.debug(s)
-        return self.yacc.parse(s, lexer=self.lexerObj)
+        logger.debug(f"input sting : {s}")
+        return self.yacc.parse(s, lexer=self.lexerObj, debug=True)
 
     def parse(self, s):
         return self.yacc.parse(s)

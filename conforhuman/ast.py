@@ -1,3 +1,4 @@
+from asyncio.log import logger
 from collections import OrderedDict
 
 class FilePosition(object):
@@ -7,7 +8,7 @@ class FilePosition(object):
         self.filename = filename
 
     def __str__(self):
-        if filename is None:
+        if self.filename is None:
            return '{}:{}'.format(self.line, self.column)
         else:
            return '{}({}:{})'.format(self.filename, self.line, self.column)
@@ -55,12 +56,15 @@ class LocalizableCollection(LocalizableObject):
         if first is None:
             return self.begin
         else:
+            if isinstance(first, tuple):
+                (key, val) = first
+                return key.getStartPosition()
             return first.getStartPosition()
 
     def getEndPosition(self) -> FilePosition:
         end = self.getLast()
-        if last is None:
-            return first #yep, here we have empty collection, no issue
+        if end is None:
+            return self.getFirst() #yep, here we have empty collection, no issue
         else:
             return end.getEndPosition()
 
@@ -84,7 +88,7 @@ class LocalizableList(LocalizableCollection):
         except IndexError:
             return None
 
-    def getLast() -> LocalizableObject:
+    def getLast(self) -> LocalizableObject:
         try:
             return self._list[-1]
         except IndexError:
@@ -113,7 +117,7 @@ class LocalizableOrderedDict(LocalizableCollection):
         except IndexError:
             return None
 
-    def getLast() -> LocalizableObject:
+    def getLast(self) -> LocalizableObject:
         try:
             return next(reversed(self._list))
         except IndexError:

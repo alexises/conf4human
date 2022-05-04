@@ -5,43 +5,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class IdentLexer(lex.Lexer):
-    def __init__(self, lexer):
-        super().__init__()
-        self.lexer = lexer
-        self.context = None
+def rollback_lexpos(t):
+    t.lexer.lexpos -= len(t.value)
 
-    def __getattr__(self, name):
-        return getattr(self.lexer, name)
-
-    def token(self):
-        logger.debug('start func')
-        data = self.lexer.token()
-        logger.debug('%s', data)
-#        while True:
-#            if self.context is None:
-#                logger.debug('begin iteration')
-#                self.context = self.lexer.token()
-#                logger.debug('test context %s', self.context)
-#
-#            if self.context is None:
-#                logger.debug('none')
-#                return None
-#
-#            try:
-#                logger.debug('here')
-#                token = next(self.context)
-#                logger.debug('test token %s', token)
-#                return token
-#            except TypeError:
-#                logger.debug('type error')
-#                (token, self.context) = (self.context, None)
-#                logger.debug('type : %s', type(token))
-#                return token
-#            except StopIteration:
-#                logger.debug('end iteration')
-#                self.context = None
-            
 class YamlLexer(object):
     tokens = (
         'COLOM',
@@ -67,7 +33,7 @@ class YamlLexer(object):
         self.lineno = 0
         self.column = 0
         self.block = []
-        self.block.append(0)
+        #self.block.append(0)
 
     def getPos(self):
         return FilePosition(self.lineno, self.column)
@@ -82,8 +48,7 @@ class YamlLexer(object):
         return t
 
     def build(self, **kwargs):
-        self.lexer = IdentLexer(lex.lex(module=self, **kwargs))
-        return self.lexer
+        return lex.lex(module=self, **kwargs)
 
     def t_blank_line(self, t):
         r'(?m)^[ ]+$'
@@ -94,18 +59,29 @@ class YamlLexer(object):
         logger.debug('middle space')
         indent_size = len(t.value)
         self.column += indent_size
-        if indent_size > self.block[-1]:
+
+        if len(self.block) == 0 or indent_size > self.block[-1]:
+            # gretter size, new block
             self.block.append(indent_size)
             t.type = 'BEGIN_BLOCK'
             return t
         elif indent_size == self.block[-1]:
+            # same size, no token
             return None
-        elif indent_size != self.block[-2]:
+        # lower size, try to remove a token
+        self.block.pop()
+        t.type = 'END_BLOCK'
+
+        if self.block[-1] > indent_size:
+            # we could try another block, so rewind the token
+            rollback_lexpos(t)
+        elif self.block[-1] > indent_size:
+            # we have some missident, raise an exception
             logger.debug("stack size : %s", self.block)
             logger.debug("ident size : %s at %s:%s", indent_size, self.lineno, self.column)
             raise Exception('bad section indentation') 
-        self.block.pop()
-        return None
+        #if we got an exact match, do nothing more fancy
+        return t
 
     def t_newline(self, t):
         r'\n+'
@@ -206,10 +182,17 @@ class YamlLexer(object):
         t.value = LocalizableLiteral(begin, end, data)
         return t
 
-#    def t_eof(self, t):
-#        r'$'
-#        while len(self.block) > 0:
-#            self.block.pop()
-#            t.type = 'END_BLOCK'
-#            return t
-#            yield t
+    def t_eof(self, t):
+        r'$'
+        logger.debug(f"pool size {self.block}")
+        logger.debug(f"len {len(t.value)}")
+        if len(self.block) > 1:
+            rollback_lexpos(t)
+        if len(self.block) == 0:
+            return None
+        else:
+            logger.debug('return end_block')
+            self.block.pop()
+            t.type = 'END_BLOCK'
+            return t
+            
