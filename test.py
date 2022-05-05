@@ -1,5 +1,6 @@
 import unittest
 from conforhuman.test.parser import TestYaml
+from conforhuman.test.ast import TestAst
 import logging
 import sys
 

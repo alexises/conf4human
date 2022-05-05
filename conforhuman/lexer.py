@@ -1,3 +1,4 @@
+from textwrap import indent
 from .ast import LocalizableLiteral, FilePosition
 import ply.lex as lex
 import codecs
@@ -33,6 +34,7 @@ class YamlLexer(object):
         self.lineno = 0
         self.column = 0
         self.block = []
+        self.minus_pos = None
         #self.block.append(0)
 
     def getPos(self):
@@ -60,6 +62,10 @@ class YamlLexer(object):
         indent_size = len(t.value)
         self.column += indent_size
 
+        # exclude minus pos block creation
+        if self.minus_pos == indent_size:
+            return
+        self.minus_pos = None
         if len(self.block) == 0 or indent_size > self.block[-1]:
             # gretter size, new block
             self.block.append(indent_size)
@@ -126,8 +132,12 @@ class YamlLexer(object):
         return self.getLiteral(t, int)
 
     def t_MINUS(self, t):
-        r'-'
-        return self.getLiteral(t)
+        r'-[ ]+'
+        l = self.getLiteral(t)
+        # we set inibition for the next section creation this allow to manage
+        # nested dict into nested list
+        self.minus_pos = self.column
+        return l
 
     def t_BOOL(self, t):
         r'(true|false)'

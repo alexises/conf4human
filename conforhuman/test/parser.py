@@ -63,7 +63,17 @@ class TestYaml(unittest.TestCase):
           -
             - barfoo
         """
+        b = """
+        - a
+        - 
+          - b
+          -
+            - c
+          - d
+        - e
+        """
         self._compareString(a, ["foo", ["bar", "foobar", ["barfoo"]]])
+        self._compareString(b, ["a", ['b', ['c'], 'd'],"e"])
 
     def test_recursive_dict(self):
         a = """
@@ -72,7 +82,82 @@ class TestYaml(unittest.TestCase):
             foobar:
               barfoo: 43
         """
+        b = """
+           a: a
+           b:
+              c: c
+              d: 
+                e: e
+              f: f
+           g: g
+        """
         self._compareString(a, {"foo": {"bar": 42, "foobar": {"barfoo": 43}}})
+        self._compareString(b, {
+            "a": "a", 
+            "b": {
+                "c": "c", 
+                "d": {
+                    "e": "e"
+                },
+                "f": "f"
+            },
+            "g": "g"
+        })
 
+    def test_inline_mix(self):
+        a = """
+        a: {}
+        b: []
+        c: 
+          - d: []
+          - e: { "f": "f", "g": "g"}
+          - h: [ 10, 3.1415, "foo"]
+        """
+        self._compareString(a, {
+            "a": {}, 
+            "b": [], 
+            "c": [
+                {"d": []}, 
+                {"e": {
+                    "f": "f", 
+                    "g": "g"
+                    }
+                }, 
+                {'h': [10, 3.1415, "foo"]} 
+            ]})
+
+    def test_list_of_dict(self):
+        a = """
+        - 
+          a: 10
+          b: 20
+          c: 30
+        - 
+          a: 40
+          b: 50
+          c: 60
+        - 
+          d: 70
+        """
+        b = """
+        - a: 10
+          b: 20
+          c: 30
+        - a: 40
+          b: 50
+          c: 60
+        - d: 70
+        """
+        self._compareString(a, [
+            {"a": 10, "b": 20, "c": 30},
+            {"a": 40, "b": 50, "c": 60},
+            {"d": 70}
+        ])
+        self._compareString(b, [
+            {"a": 10, "b": 20, "c": 30},
+            {"a": 40, "b": 50, "c": 60},
+            {"d": 70}
+        ])
+        
 if __name__ == '__main__':
     unittest.main()
