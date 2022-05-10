@@ -68,9 +68,10 @@ class YamlLexer(object):
         indent_size = len(t.value)
         self.column += indent_size
 
+        logger.debug(f'{self.lineno}:{self.column} {indent_size} and {self.minus_pos} -> {self.block}')
         # exclude minus pos block creation
-        if self.minus_pos == indent_size:
-            return
+        #if self.block and self.minus_pos == self.block[-1]:
+        #    return
         self.minus_pos = None
         if len(self.block) == 0 or indent_size > self.block[-1]:
             # gretter size, new block
@@ -98,6 +99,7 @@ class YamlLexer(object):
     def t_newline(self, t):
         r'\n+'
         t.lineno += len(t.value)
+        self.lineno += len(t.value)
         self.column = 0
 
     def t_space(self, t):
@@ -146,6 +148,7 @@ class YamlLexer(object):
             self.state = None
             self.minus_pos = None
             self.block.append(self.column)
+            logger.debug(self.block)
             self.rollback_lexpos(t)
             t.type = "BEGIN_BLOCK"
             logger.debug("exit inhibition")
