@@ -111,8 +111,8 @@ class YamlParser(object):
            p[0].add(p[2])
 
     def p_structured_list_item(self, p):
-        ''' structured_list_item : MINUS document '''
-        p[0] = p[2]
+        ''' structured_list_item : MINUS BEGIN_BLOCK document END_BLOCK'''
+        p[0] = p[3]
 
     def p_structured_dict(self, p):
         ''' structured_dict : structured_dict_item

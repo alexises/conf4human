@@ -42,13 +42,13 @@ class YamlLexer(object):
         return FilePosition(self.lineno, self.column)
 
     def getLiteral(self, t, callback=None):
-        self.state = "LITERAL"
         begin = self.getPos()
         self.column += len(t.value)
         end = self.getPos()
         if callback is not None:
             t.value = callback(t.value)
         t.value = LocalizableLiteral(begin, end, t.value)
+        self.minus_pos = None #disable inhibition if literal is found, here trelling space is good
         return t
 
     def rollback_lexpos(self, t):
@@ -70,9 +70,15 @@ class YamlLexer(object):
 
         logger.debug(f'{self.lineno}:{self.column} {indent_size} and {self.minus_pos} -> {self.block}')
         # exclude minus pos block creation
-        #if self.block and self.minus_pos == self.block[-1]:
-        #    return
-        self.minus_pos = None
+        if self.minus_pos is not None and self.minus_pos < indent_size:
+            logger.debug('inhibition')
+            logger.debug(f'{self.block} -> {self.minus_pos}')
+            # sometime you don't have all the trelling witespace for
+            # corrent indentatio, so we replace the head position with correct one
+            self.block[-1] = indent_size
+            self.minus_pos = None
+            return
+        
         if len(self.block) == 0 or indent_size > self.block[-1]:
             # gretter size, new block
             self.block.append(indent_size)
@@ -142,23 +148,19 @@ class YamlLexer(object):
     def t_MINUS(self, t):
         r'-[ ]*'
         # check if previous state was a list, so we can revert the inhibition if it was running
-        logger.debug(self.state)
-        if self.state == "LIST_ITEM" and \
-           self.minus_pos != None:
+        
+        if self.state == "LIST_ITEM":
             self.state = None
-            self.minus_pos = None
-            self.block.append(self.column)
-            logger.debug(self.block)
-            self.rollback_lexpos(t)
+            logger.debug(f'{self.state} -> {self.block} ({len(t.value)})')
             t.type = "BEGIN_BLOCK"
-            logger.debug("exit inhibition")
+            self.column += len(t.value)
+            self.block.append(self.column)
+            self.minus_pos = self.column
+            logger.debug("add begin block")
             return t
-        # we set inhibition for the next section creation this allow to manage
-        # nested dict into nested list
-        self.minus_pos = self.column
-        l = self.getLiteral(t)
         self.state = "LIST_ITEM"
-        logger.debug(self.state)
+        self.rollback_lexpos(t)
+        l = self.getLiteral(t)
         return l
 
     def t_BOOL(self, t):
@@ -175,7 +177,6 @@ class YamlLexer(object):
 
     def t_NULL(self, t):
         r'null'
-        self.state = "LITERAL"
         begin = self.getPos()
         self.column+=len(t.value)
         end = self.getPos()
@@ -196,17 +197,14 @@ class YamlLexer(object):
 
     def t_SIMPLE_STRING(self, t):
         r"'([^']|\\')*'"
-        self.state = "LITERAL"
         return self.decode_string(t)
    
     def t_DOUBLE_STRING(self, t):
         r'"([^"]|\\")*"'
-        self.state = "LITERAL"
         return self.decode_string(t)
 
     def t_NON_QUOTED_STRING(self, t):
         r"[^ :\"'0-9{}\[\]\n-][^:\"'{}\[\]\n]*"
-        self.state = "LITERAL"
         begin = self.getPos()
         data = codecs.escape_decode(str(t.value))[0].decode('utf8')
         self.column += len(t.value)
