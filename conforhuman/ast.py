@@ -20,6 +20,9 @@ class LocalizableObject(object):
     def getEndPosition(self) -> FilePosition:
         raise NotImplemented("This class is an interface")
 
+    def serialize(self):
+        raise NotImplemented("This class is an interface")
+
 class LocalizableLiteral(LocalizableObject):
     def __init__(self, begin: FilePosition, end: FilePosition, value):
         self.value = value
