@@ -137,8 +137,8 @@ class YamlParser(object):
 
     def parse_string(self, s):
         logger.debug(f"input sting : {s}")
-        #return self.yacc.parse(s, lexer=self.lexerObj)
-        return self.yacc.parse(s, lexer=self.lexerObj, debug=True)
+        return self.yacc.parse(s, lexer=self.lexerObj)
+        #return self.yacc.parse(s, lexer=self.lexerObj, debug=True)
 
     def parse(self, s):
         return self.yacc.parse(s)

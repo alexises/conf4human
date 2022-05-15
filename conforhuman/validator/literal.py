@@ -1,6 +1,9 @@
 from secrets import choice
 from .interface import ValidatorInterface
 from conforhuman.ast import LocalizableLiteral
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Min(ValidatorInterface):
     def __init__(self, min_value: int):
@@ -11,7 +14,7 @@ class Min(ValidatorInterface):
         self.min_value = min_value
 
     def validate(self, object: LocalizableLiteral) -> bool:
-        return object.getValue() > self.min_value
+        return object.getValue() >= self.min_value
 
 class Max(ValidatorInterface):
     def __init__(self, max_value: int):
@@ -22,7 +25,7 @@ class Max(ValidatorInterface):
         self.max_value = max_value
 
     def validate(self, object: LocalizableLiteral) -> bool:
-        return object.getValue() < self.max_value
+        return object.getValue() <= self.max_value
 
 class FixedChoice(ValidatorInterface):
     def __init__(self, choices: list):
