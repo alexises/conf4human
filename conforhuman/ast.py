@@ -131,6 +131,9 @@ class LocalizableOrderedDict(LocalizableCollection):
 
     def __item__(self, idx):
         return self._dict[idx]
+
+    def get(self, idx, default=None):
+        return self._dict.get(idx, default)
    
     def serialize(self):
         out = {}
