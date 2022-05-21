@@ -2,7 +2,7 @@ from http.client import NON_AUTHORITATIVE_INFORMATION
 import string
 from typing import Collection
 from conforhuman.validator.interface import ValidatorInterface
-from conforhuman.ast import LocalizableLiteral, LocalizableOrderedDict
+from conforhuman.ast import LocalizableList, LocalizableLiteral, LocalizableOrderedDict
 from conforhuman.ast import FilePosition
 
 class ConfigError(object):
@@ -43,11 +43,26 @@ class Field(object):
 
     def validate(self, attr: LocalizableLiteral):
         validation_errors = []
-        for i in self._validator:
-            if validation_errors:
-                validation_errors.append(i.validate())
+        for validator in self._validator:
+            if not validator.validate(attr):
+                validation_errors.append(validator.getError(attr))
 
         return validation_errors
+
+class ListField(Field):
+    def validate(self, attr: LocalizableList):
+        validation_error = []
+        for item in attr:
+            for validator in self._validator:
+                if not validator.validate(attr):
+                    validation_error.append(validator.getError(attr))
+
+        return validation_error
+
+    def serialize(self, attr: LocalizableList) -> None:
+        self._value = attr.serialize()
+
+
 
 class ConfigurationObject(object):
     def __init__(self):
@@ -67,6 +82,8 @@ class ConfigurationObject(object):
             if len(error) > 0:
                 self._errors += error
 
+        return self._errors
+
     def serialize(self, attr: LocalizableOrderedDict):
         for key, val in self._attributes.items():
             name = val.get_name()
@@ -74,5 +91,15 @@ class ConfigurationObject(object):
             value = attr.get(name, default)
             val.serialize(value)
             
+class SubConfigFIeld(Field):
+    def __init__(self, subObj: ConfigurationObject, name: str, required: bool = True, default=None):
+        super().__init__(name, required, default)
 
+        self.subObj = subObj
+
+    def validate(self, attr: LocalizableOrderedDict):
+        return self.subObj.validate()
+
+    def serialize(self, attr: LocalizableLiteral) -> None:
+        return self.subObj.serialize()
         
