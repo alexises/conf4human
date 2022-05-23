@@ -1,0 +1,9 @@
+[run]
+omit='.env/*'
+source='./test'
+
+[report]
+show_missing = true
+
+[lcov]
+output = coverage/coverage.lcov
