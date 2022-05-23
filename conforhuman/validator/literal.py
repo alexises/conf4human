@@ -16,6 +16,9 @@ class Min(ValidatorInterface):
     def validate(self, object: LocalizableLiteral) -> bool:
         return object.getValue() >= self.min_value
 
+    def getError(self, object: LocalizableLiteral) -> str:
+        return f"value '{object.getValue()}' is below min value '{self.min_value}'"
+
 class Max(ValidatorInterface):
     def __init__(self, max_value: int):
         '''
@@ -27,6 +30,9 @@ class Max(ValidatorInterface):
     def validate(self, object: LocalizableLiteral) -> bool:
         return object.getValue() <= self.max_value
 
+    def getError(self, object: LocalizableLiteral) -> str:
+        return f"value '{object.getValue()}' is above max value '{self.max_value}'"
+
 class FixedChoice(ValidatorInterface):
     def __init__(self, choices: list):
         '''
@@ -34,6 +40,9 @@ class FixedChoice(ValidatorInterface):
             choice : list of valid item
         '''
         self.choices = choices
+
+    def getError(self, object: LocalizableLiteral) -> str:
+        return f"value '{object.getValue()}' is not an accepted value of '{self.choices}'"
     
     def validate(self, object: LocalizableLiteral) -> bool:
         return object.getValue() in self.choices

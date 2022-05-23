@@ -9,7 +9,7 @@ class ValidatorInterface(object):
         '''
         raise NotImplementedError("This class is an interface")
 
-    def getError(self, object: LocalizableObject) -> bool:
+    def getError(self, object: LocalizableObject) -> str:
         '''
             getError : get descriptive validation error message
             Return error message relative to the issue

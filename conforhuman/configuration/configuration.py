@@ -1,12 +1,12 @@
 from http.client import NON_AUTHORITATIVE_INFORMATION
 import string
-from typing import Collection
+from typing import Union
 from conforhuman.validator.interface import ValidatorInterface
 from conforhuman.ast import LocalizableList, LocalizableLiteral, LocalizableOrderedDict
 from conforhuman.ast import FilePosition
 
 class ConfigError(object):
-    def __init__(self, msg: string, beg: FilePosition, end: Collection[FilePosition, None] = None) -> None:
+    def __init__(self, msg: string, beg: FilePosition, end: Union[FilePosition, None] = None) -> None:
         self.msg = msg
         self.beg : FilePosition = beg
         self.end : FilePosition = end
@@ -25,6 +25,7 @@ class Field(object):
         self._required = required
         self._default = default
         self._value = None
+        self._serialized = False
 
     def get(self):
         return self._value
@@ -40,8 +41,9 @@ class Field(object):
 
     def serialize(self, attr: LocalizableLiteral) -> None:
         self._value = attr.serialize()
+        self._serialized = True
 
-    def validate(self, attr: LocalizableLiteral):
+    def validate(self, attr: LocalizableLiteral) -> list[str]:
         validation_errors = []
         for validator in self._validator:
             if not validator.validate(attr):
@@ -61,8 +63,7 @@ class ListField(Field):
 
     def serialize(self, attr: LocalizableList) -> None:
         self._value = attr.serialize()
-
-
+        self._serialized = True
 
 class ConfigurationObject(object):
     def __init__(self):
@@ -101,5 +102,7 @@ class SubConfigFIeld(Field):
         return self.subObj.validate()
 
     def serialize(self, attr: LocalizableLiteral) -> None:
-        return self.subObj.serialize()
+        ret = self.subObj.serialize()
+        self._serialized = True
+        return ret
         

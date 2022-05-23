@@ -2,6 +2,7 @@ import unittest
 from conforhuman.test.parser import TestYaml
 from conforhuman.test.ast import TestAst
 from conforhuman.test.validator import TestValidator
+from conforhuman.test.configuration import TestConfiguration
 import logging
 import sys
 
